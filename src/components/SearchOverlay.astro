@@ -1,0 +1,260 @@
+---
+/**
+ * SearchOverlay.astro — 全文搜索遮罩层（移植自 Firefly）
+ * 核心逻辑来自 Firefly/src/components/controls/Search.svelte
+ * 修改：数据源 → user/posts，颜色 → CSS 变量
+ *
+ * 生产环境：Pagefind 全文索引搜索
+ * 开发环境：回退到标题/描述客户端匹配
+ * Ctrl+K 打开，Esc 关闭
+ */
+import { getPosts } from '../utils/userData';
+
+const fallbackPosts = getPosts().map((p) => ({
+	title: p.title,
+	description: p.description,
+	slug: p.slug,
+	category: p.category || '',
+}));
+---
+
+<!-- 搜索遮罩层 -->
+<div id="search-overlay" class="fixed inset-0 z-[100] hidden items-start justify-center pt-[15vh]" style="background-color: rgba(0,0,0,0.4); backdrop-filter: blur(4px);">
+	<div class="search-panel w-full max-w-lg rounded-2xl p-4 shadow-2xl mx-4" style="background-color: var(--color-bg-card); border: 1px solid var(--color-border); max-height: calc(100vh - 100px); overflow-y: auto;">
+
+		<!-- 搜索输入框（图标内置） -->
+		<div class="flex items-center rounded-xl px-3 py-2" style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
+			<svg class="mr-2 h-5 w-5 shrink-0" style="color: var(--color-text-secondary);" viewBox="0 0 20 20" fill="currentColor">
+				<path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+			</svg>
+			<input
+				id="search-input"
+				type="text"
+				placeholder="搜索文章..."
+				class="flex-1 bg-transparent text-base outline-none"
+				style="color: var(--color-text);"
+				autocomplete="off"
+			/>
+			<kbd class="ml-2 shrink-0 rounded px-1.5 py-0.5 text-xs" style="border: 1px solid var(--color-border); color: var(--color-text-secondary);">Esc</kbd>
+		</div>
+
+		<!-- 搜索状态 -->
+		<div id="search-status" class="hidden px-3 py-2 text-xs" style="color: var(--color-text-secondary);"></div>
+
+		<!-- 搜索结果 -->
+		<div id="search-results" class="mt-2"></div>
+	</div>
+</div>
+
+<script is:inline define:vars={{ fallbackData: fallbackPosts }}>
+(function() {
+	var overlay = document.getElementById('search-overlay');
+	var input = document.getElementById('search-input');
+	var resultsContainer = document.getElementById('search-results');
+	var statusEl = document.getElementById('search-status');
+
+	var pagefindModule = null;
+	var pagefindTried = false;
+	var initialized = false;
+	var debounceTimer = null;
+
+	// === Pagefind Loading (from Firefly) ===
+	function loadPagefind() {
+		if (pagefindModule) return Promise.resolve(pagefindModule);
+		if (pagefindTried) return Promise.resolve(null);
+		pagefindTried = true;
+		return import('/pagefind/pagefind.js').then(function(mod) {
+			pagefindModule = mod;
+			initialized = true;
+			return mod;
+		}).catch(function() {
+			return null;
+		});
+	}
+
+	// === Open / Close ===
+	function open() {
+		overlay.classList.remove('hidden');
+		overlay.classList.add('flex');
+		input.focus();
+		loadPagefind();
+	}
+
+	function close() {
+		overlay.classList.add('hidden');
+		overlay.classList.remove('flex');
+		input.value = '';
+		resultsContainer.innerHTML = '';
+		statusEl.textContent = '';
+		statusEl.classList.add('hidden');
+	}
+
+	// === Core Search Logic (from Firefly) ===
+	function search(keyword) {
+		if (!keyword || !keyword.trim()) {
+			resultsContainer.innerHTML = '';
+			statusEl.classList.add('hidden');
+			return;
+		}
+
+		statusEl.textContent = '搜索中...';
+		statusEl.classList.remove('hidden');
+
+		if (pagefindModule && typeof pagefindModule.search === 'function') {
+			// Production: Pagefind search
+			pagefindModule.search(keyword).then(function(response) {
+				var results = response.results;
+				statusEl.textContent = '找到 ' + results.length + ' 条结果';
+
+				if (results.length === 0) {
+					resultsContainer.innerHTML = '<div class="py-4 text-center text-sm" style="color: var(--color-text-secondary);">没有找到匹配的文章</div>';
+					return;
+				}
+
+				Promise.all(results.slice(0, 10).map(function(item) { return item.data(); })).then(function(items) {
+					renderResults(items, keyword);
+				});
+			});
+		} else {
+			// Dev fallback: client-side title/description match
+			loadPagefind().then(function(pf) {
+				if (pf && typeof pf.search === 'function') {
+					pagefindModule = pf;
+					search(keyword);
+				} else {
+					renderFallbackResults(keyword);
+				}
+			});
+		}
+	}
+
+	// === Render Pagefind Results (from Firefly) ===
+	function renderResults(items, keyword) {
+		resultsContainer.innerHTML = '';
+
+		items.forEach(function(item, index) {
+			var div = document.createElement('div');
+			div.className = 'group block rounded-xl px-3 py-2 cursor-pointer transition-colors';
+			div.style.cssText = 'transition: background-color 0.15s;';
+			div.onmouseenter = function() { this.style.backgroundColor = 'var(--color-primary-light)'; };
+			div.onmouseleave = function() { this.style.backgroundColor = 'transparent'; };
+
+			var url = item.url || '#';
+			div.onclick = function() { close(); window.location.href = url; };
+
+			// Title with chevron
+			var titleHtml = '<div class="inline-flex font-bold items-center" style="color: var(--color-text); font-size: 0.95rem;">' +
+				(item.meta && item.meta.title || item.url) +
+				' <svg class="ml-1" style="width: 0.75rem; height: 0.75rem; color: var(--color-primary);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>' +
+				'</div>';
+
+			// Excerpt
+			var excerptHtml = '';
+			if (item.excerpt && item.excerpt.includes('<mark>')) {
+				excerptHtml = '<div class="text-sm mt-0.5" style="color: var(--color-text-secondary);">' + item.excerpt + '</div>';
+			}
+
+			// Content match (正文 badge)
+			var contentHtml = '';
+			if (item.content && item.content.includes('<mark>')) {
+				contentHtml = '<div class="text-sm mt-0.5 flex items-start gap-1.5">' +
+					'<span class="shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold" style="background-color: var(--color-primary-light); color: var(--color-primary);">正文</span>' +
+					'<div style="color: var(--color-text-secondary);">' + item.content + '</div>' +
+					'</div>';
+			}
+
+			div.innerHTML = titleHtml + excerptHtml + contentHtml;
+			resultsContainer.appendChild(div);
+		});
+
+		// "View more" if > 5 results
+		if (items.length > 5) {
+			var moreDiv = document.createElement('div');
+			moreDiv.className = 'group block rounded-xl px-3 py-2 cursor-pointer text-center font-bold transition-colors';
+			moreDiv.style.cssText = 'color: var(--color-primary);';
+			moreDiv.onmouseenter = function() { this.style.backgroundColor = 'var(--color-primary-light)'; };
+			moreDiv.onmouseleave = function() { this.style.backgroundColor = 'transparent'; };
+			moreDiv.innerHTML = '查看更多 ' + (items.length - 5) + ' 条结果 →';
+			resultsContainer.appendChild(moreDiv);
+		}
+	}
+
+	// === Render Fallback Results (dev mode) ===
+	function renderFallbackResults(keyword) {
+		var q = keyword.toLowerCase();
+		var allPosts = fallbackData || [];
+		var matched = allPosts.filter(function(p) {
+			return p.title.toLowerCase().includes(q) ||
+				p.description.toLowerCase().includes(q) ||
+				p.category.toLowerCase().includes(q);
+		});
+
+		if (matched.length > 0) {
+			statusEl.textContent = '找到 ' + matched.length + ' 条结果（仅搜索标题）';
+			statusEl.classList.remove('hidden');
+		} else {
+			statusEl.textContent = '';
+			statusEl.classList.add('hidden');
+		}
+
+		resultsContainer.innerHTML = '';
+
+		if (matched.length === 0) {
+			resultsContainer.innerHTML = '<div class="py-4 text-center text-sm" style="color: var(--color-text-secondary);">没有找到匹配的文章</div>';
+			return;
+		}
+
+		matched.forEach(function(p) {
+			var div = document.createElement('div');
+			div.className = 'group block rounded-xl px-3 py-2 cursor-pointer transition-colors';
+			div.onmouseenter = function() { this.style.backgroundColor = 'var(--color-primary-light)'; };
+			div.onmouseleave = function() { this.style.backgroundColor = 'transparent'; };
+
+			var url = '/blog/' + p.slug + '/';
+			div.onclick = function() { close(); window.location.href = url; };
+
+			var titleHtml = '<div class="inline-flex font-bold items-center" style="color: var(--color-text); font-size: 0.95rem;">' +
+				p.title +
+				(p.category ? ' <span class="ml-2 text-xs font-normal" style="color: var(--color-text-secondary);">' + p.category + '</span>' : '') +
+				'</div>';
+
+			var descHtml = p.description
+				? '<div class="text-sm mt-0.5 truncate" style="color: var(--color-text-secondary);">' + p.description + '</div>'
+				: '';
+
+			div.innerHTML = titleHtml + descHtml;
+			resultsContainer.appendChild(div);
+		});
+	}
+
+	// === Event Listeners ===
+
+	// Search button trigger
+	document.querySelectorAll('[data-search-open]').forEach(function(el) {
+		el.addEventListener('click', open);
+	});
+
+	// Keyboard shortcuts
+	document.addEventListener('keydown', function(e) {
+		if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+			e.preventDefault();
+			open();
+		}
+		if (e.key === 'Escape') close();
+	});
+
+	// Click overlay to close
+	overlay.addEventListener('click', function(e) {
+		if (e.target === overlay) close();
+	});
+
+	// Input with debounce (300ms, from Firefly)
+	input.addEventListener('input', function() {
+		var query = input.value;
+		if (debounceTimer) clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(function() {
+			search(query);
+		}, 300);
+	});
+})();
+</script>

@@ -1,0 +1,27 @@
+{
+	"_说明": "主题色配置 — primary 用于链接/按钮/高亮，background 用于页面/卡片背景。修改后重新构建即生效。",
+	"light": {
+		"_name": "晴空蓝 · 雪雾白",
+		"primary": "#89C2FF",
+		"primaryHover": "#6BB0FF",
+		"primaryLight": "rgba(137, 194, 255, 0.12)",
+		"background": "#E6F7FF",
+		"backgroundCard": "#F0FAFF",
+		"backgroundNav": "rgba(230, 247, 255, 0.8)",
+		"text": "#1A202C",
+		"textSecondary": "#5A6A7A",
+		"border": "#B8DEFF"
+	},
+	"dark": {
+		"_name": "机甲灰 · 电光蓝",
+		"primary": "#00D4FF",
+		"primaryHover": "#00B8E0",
+		"primaryLight": "rgba(0, 212, 255, 0.12)",
+		"background": "#1A1A22",
+		"backgroundCard": "#2C2C34",
+		"backgroundNav": "rgba(26, 26, 34, 0.85)",
+		"text": "#E2E8F0",
+		"textSecondary": "#8888A0",
+		"border": "#3A3A48"
+	}
+}

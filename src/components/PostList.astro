@@ -1,0 +1,107 @@
+---
+/**
+ * PostList.astro — 文章列表
+ * 右侧大图 + 左侧内容，图片撑满卡片垂直空间
+ */
+import { getPosts, getPostsByCategory, getPostsByTag, getProfile } from '../utils/userData';
+import FormattedDate from './FormattedDate.astro';
+
+const category = Astro.url.searchParams.get('category') || '';
+const tag = Astro.url.searchParams.get('tag') || '';
+
+let posts = getPosts();
+
+if (category) {
+	posts = getPostsByCategory(category);
+} else if (tag) {
+	posts = getPostsByTag(tag);
+}
+
+const profile = getProfile();
+---
+
+<div>
+	{posts.length === 0 && (
+		<p style="color: var(--color-text-secondary);">暂无文章。</p>
+	)}
+
+	<div class="space-y-4">
+		{posts.map((post) => {
+			const thumbnail = post.heroImage || profile.avatar;
+			return (
+			<article
+				class="card block overflow-hidden transition-all"
+				style="cursor: pointer; padding: 0.5rem;"
+				data-href={`/blog/${post.slug}/`}
+			>
+				<div class="flex flex-row-reverse" style="height: 100%;">
+					<!-- 右侧缩略图 — 与卡片内边距留 8px 间隙 -->
+					<div class="shrink-0" style="width: 120px;">
+						<img
+							src={thumbnail}
+							alt=""
+							class="h-full w-full object-cover"
+							loading="lazy"
+							style="
+								border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+								box-shadow: -1px 0 0 0 var(--color-border);
+							"
+						/>
+					</div>
+
+					<!-- 左侧内容 -->
+					<div class="min-w-0 flex-1 px-5 py-4">
+						<h2 class="text-xl font-bold" style="color: var(--color-text);">
+							<a href={`/blog/${post.slug}/`} class="no-underline" style="color: inherit;">{post.title}</a>
+						</h2>
+
+						<div class="mt-1.5 flex items-center gap-2 text-xs" style="color: var(--color-text-secondary);">
+							<time>
+								<FormattedDate date={post.pubDate} />
+							</time>
+							{post.category && (
+								<a
+									href={`/archive?category=${encodeURIComponent(post.category)}`}
+									class="rounded px-1.5 py-0.5 no-underline"
+									style="background-color: var(--color-primary-light); color: var(--color-primary);"
+									onclick="event.stopPropagation();"
+								>
+									{post.category}
+								</a>
+							)}
+						</div>
+
+						{post.description && (
+							<p class="mt-2 text-sm leading-relaxed line-clamp-2" style="color: var(--color-text-secondary);">{post.description}</p>
+						)}
+
+						{post.tags && post.tags.length > 0 && (
+							<div class="mt-3 flex flex-wrap justify-start gap-1.5">
+								{post.tags.map((t) => (
+									<a
+										href={`/archive?tag=${encodeURIComponent(t)}`}
+										class="rounded-full px-2 py-0.5 text-xs no-underline transition-colors"
+										style="background-color: var(--color-primary-light); color: var(--color-text-secondary);"
+										onclick="event.stopPropagation();"
+									>
+										#{t}
+									</a>
+								))}
+							</div>
+						)}
+					</div>
+				</div>
+			</article>
+		);
+		})}
+	</div>
+</div>
+
+<script is:inline>
+	document.addEventListener('click', function(e) {
+		var card = e.target.closest('[data-href]');
+		if (card && !e.defaultPrevented) {
+			window.location.href = card.getAttribute('data-href');
+		}
+	});
+</script>

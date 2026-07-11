@@ -1,141 +1,162 @@
-/*
-  The CSS in this style tag is based off of Bear Blog's default CSS.
-  https://github.com/HermanMartinus/bearblog/blob/297026a877bc2ab2b3bdfbd6b9f7961c350917dd/templates/styles/blog/default.css
-  License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
- */
+@import "tailwindcss";
 
-:root {
-	--accent: #2337ff;
-	--accent-dark: #000d8a;
-	--black: 15, 18, 25;
-	--gray: 96, 115, 159;
-	--gray-light: 229, 233, 240;
-	--gray-dark: 34, 41, 57;
-	--gray-gradient: rgba(var(--gray-light), 50%), #fff;
-	--box-shadow:
-		0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
-		0 16px 32px rgba(var(--gray), 33%);
+@source "../../user/**/*.{astro,md,mdx}";
+
+@plugin "@tailwindcss/typography";
+
+/* ============================================
+ * Design Tokens — 字体
+ * ============================================ */
+@font-face {
+	font-family: "UserDefault";
+	src: url("/user/assets/fonts/DreamHanSansCN-W12.ttf") format("truetype");
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
 }
+
+@font-face {
+	font-family: "UserCode";
+	src: url("/user/assets/fonts/DreamHanSansCN-W12.ttf") format("truetype");
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "UserPixel";
+	src: url("/user/assets/fonts/fusion-pixel-12px-monospaced-zh_hans.otf") format("opentype");
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* ============================================
+ * Design Tokens — 主题色 & 间距 & 圆角 & 阴影
+ * ============================================ */
+
+:root,
+[data-theme="light"] {
+	--font-default: "UserDefault", "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+	--font-code: "UserCode", "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+	--font-pixel: "UserPixel", "Press Start 2P", monospace;
+
+	--color-bg: #E6F7FF;
+	--color-bg-card: #F0FAFF;
+	--color-bg-nav: rgba(230, 247, 255, 0.8);
+	--color-text: #1A202C;
+	--color-text-secondary: #5A6A7A;
+	--color-border: #B8DEFF;
+	--color-primary: #89C2FF;
+	--color-primary-hover: #6BB0FF;
+	--color-primary-light: rgba(137, 194, 255, 0.12);
+
+	--shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+	--shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+	--shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+	--shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+	--radius-sm: 0.5rem;
+	--radius-md: 0.75rem;
+	--radius-lg: 1rem;
+	--radius-xl: 1.25rem;
+
+	--space-xs: 0.25rem;
+	--space-sm: 0.5rem;
+	--space-md: 1rem;
+	--space-lg: 1.5rem;
+	--space-xl: 2rem;
+}
+
+[data-theme="dark"] {
+	--color-bg: #1A1A22;
+	--color-bg-card: #2C2C34;
+	--color-bg-nav: rgba(26, 26, 34, 0.85);
+	--color-text: #E2E8F0;
+	--color-text-secondary: #8888A0;
+	--color-border: #3A3A48;
+	--color-primary: #00D4FF;
+	--color-primary-hover: #00B8E0;
+	--color-primary-light: rgba(0, 212, 255, 0.12);
+
+	--shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
+	--shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+	--shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+	--shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+/* ============================================
+ * 全局基础样式 — 更大字号
+ * ============================================ */
+html { font-size: 17px; }
+
 body {
-	font-family: var(--font-atkinson);
-	margin: 0;
-	padding: 0;
-	text-align: left;
-	background: linear-gradient(var(--gray-gradient)) no-repeat;
-	background-size: 100% 600px;
-	word-wrap: break-word;
-	overflow-wrap: break-word;
-	color: rgb(var(--gray-dark));
-	font-size: 20px;
-	line-height: 1.7;
-}
-main {
-	width: 720px;
-	max-width: calc(100% - 2em);
-	margin: auto;
-	padding: 3em 1em;
-}
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-	margin: 0 0 0.5rem 0;
-	color: rgb(var(--black));
-	line-height: 1.2;
-}
-h1 {
-	font-size: 3.052em;
-}
-h2 {
-	font-size: 2.441em;
-}
-h3 {
-	font-size: 1.953em;
-}
-h4 {
-	font-size: 1.563em;
-}
-h5 {
-	font-size: 1.25em;
-}
-strong,
-b {
-	font-weight: 700;
-}
-a {
-	color: var(--accent);
-}
-a:hover {
-	color: var(--accent);
-}
-p {
-	margin-bottom: 1em;
-}
-.prose p {
-	margin-bottom: 2em;
-}
-textarea {
-	width: 100%;
-	font-size: 16px;
-}
-input {
-	font-size: 16px;
-}
-table {
-	width: 100%;
-}
-img {
-	max-width: 100%;
-	height: auto;
-	border-radius: 8px;
-}
-code {
-	padding: 2px 5px;
-	background-color: rgb(var(--gray-light));
-	border-radius: 2px;
-}
-pre {
-	padding: 1.5em;
-	border-radius: 8px;
-}
-pre > code {
-	all: unset;
-}
-blockquote {
-	border-left: 4px solid var(--accent);
-	padding: 0 0 0 20px;
-	margin: 0;
-	font-size: 1.333em;
-}
-hr {
-	border: none;
-	border-top: 1px solid rgb(var(--gray-light));
-}
-@media (max-width: 720px) {
-	body {
-		font-size: 18px;
-	}
-	main {
-		padding: 1em;
-	}
+	font-family: var(--font-default);
+	color: var(--color-text);
+	background-color: var(--color-bg);
+	transition: background-color 0.3s, color 0.3s;
 }
 
+h1 { font-size: 1.75rem; font-weight: 700; }
+h2 { font-size: 1.35rem; font-weight: 600; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+
+pre, code {
+	font-family: var(--font-code);
+}
+
+/* MD3 卡片 */
+.card {
+	background-color: var(--color-bg-card);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-sm);
+	padding: var(--space-lg);
+	transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.25s ease;
+}
+
+.card:hover {
+	box-shadow: var(--shadow-md);
+	transform: translateY(-2px);
+}
+
+.card-title {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--color-text);
+	margin-bottom: 0.75rem;
+}
+
+/* 像素字体 */
+.font-pixel-active { font-family: var(--font-pixel) !important; }
+.font-pixel-active h1, .font-pixel-active h2, .font-pixel-active h3,
+.font-pixel-active h4, .font-pixel-active h5, .font-pixel-active h6,
+.font-pixel-active p, .font-pixel-active li, .font-pixel-active a,
+.font-pixel-active td, .font-pixel-active th, .font-pixel-active blockquote {
+	font-family: var(--font-pixel) !important;
+}
+.font-pixel-active code, .font-pixel-active pre {
+	font-family: var(--font-code) !important;
+}
+
+/* prose 排版 */
+.prose { max-width: none; }
+.prose :where(h1, h2, h3, h4, h5, h6, p, li, td, th, blockquote, strong, em, small, figcaption):not(:where(.not-prose *)) {
+	color: var(--color-text);
+}
+.prose :where(blockquote, hr):not(:where(.not-prose *)) {
+	border-color: var(--color-border);
+}
+.prose a { color: var(--color-primary); text-decoration: underline; }
+.prose a:hover { color: var(--color-primary-hover); }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+
+/* 无障碍 */
 .sr-only {
-	border: 0;
-	padding: 0;
-	margin: 0;
-	position: absolute !important;
-	height: 1px;
-	width: 1px;
-	overflow: hidden;
-	/* IE6, IE7 - a 0 height clip, off to the bottom right of the visible 1px box */
-	clip: rect(1px 1px 1px 1px);
-	/* maybe deprecated but we need to support legacy browsers */
-	clip: rect(1px, 1px, 1px, 1px);
-	/* modern browsers, clip-path works inwards from each corner */
-	clip-path: inset(50%);
-	/* added line to stop words getting smushed together (as they go onto separate lines and some screen readers do not understand line feeds as a space */
-	white-space: nowrap;
+	position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+	overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
 }

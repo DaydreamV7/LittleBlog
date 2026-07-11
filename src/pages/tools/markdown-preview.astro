@@ -1,0 +1,95 @@
+---
+/**
+ * tools/markdown-preview.astro — Markdown 预览器工具
+ * CSS 变量颜色
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Markdown 预览器 | 工具" description="实时预览 Markdown 文本">
+	<Fragment slot="main">
+		<div class="mb-4">
+			<a href="/tools" class="text-sm no-underline hover:underline" style="color: var(--color-primary);">
+				← 返回工具列表
+			</a>
+		</div>
+
+		<div class="card">
+			<h2 class="mb-4 text-xl font-bold" style="color: var(--color-text);">Markdown 预览器</h2>
+			<p class="mb-4 text-sm" style="color: var(--color-text-secondary);">在左侧输入 Markdown 文本，右侧实时预览渲染结果。</p>
+
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+				<div>
+					<label class="mb-1 block text-xs font-medium" style="color: var(--color-text-secondary);">Markdown 输入</label>
+					<textarea
+						id="md-input"
+						class="h-96 w-full resize-none rounded-lg p-3 font-mono text-sm outline-none"
+						style="border: 1px solid var(--color-border); background-color: var(--color-bg); color: var(--color-text);"
+						placeholder="在此输入 Markdown..."
+					>## 标题示例
+
+这是一段**加粗**文本和*斜体*文本。
+
+### 列表
+
+
+### 代码
+
+`const hello = "world";`
+
+### 引用
+
+> 这是一段引用文字。
+
+### 链接
+
+[访问 GitHub](https://github.com)</textarea>
+				</div>
+
+				<div>
+					<label class="mb-1 block text-xs font-medium" style="color: var(--color-text-secondary);">预览</label>
+					<div
+						id="md-preview"
+						class="prose h-96 overflow-y-auto rounded-lg p-3"
+						style="border: 1px solid var(--color-border); background-color: var(--color-bg);"
+					/>
+				</div>
+			</div>
+		</div>
+	</Fragment>
+</BaseLayout>
+
+<script>
+	(function () {
+		const input = document.getElementById('md-input') as HTMLTextAreaElement;
+		const preview = document.getElementById('md-preview');
+
+		function renderMarkdown(md: string): string {
+			let html = md
+				.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+				.replace(/`([^`]+)`/g, '<code>$1</code>')
+				.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
+				.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
+				.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>')
+				.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>')
+				.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+				.replace(/\*(.+?)\*/g, '<em>$1</em>')
+				.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+				.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>')
+				.replace(/\n\n/g, '</p><p>')
+				.replace(/^---$/gm, '<hr/>');
+
+			html = html.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>');
+			return '<p>' + html + '</p>';
+		}
+
+		function update() {
+			if (preview && input) {
+				preview.innerHTML = renderMarkdown(input.value);
+			}
+		}
+
+		input?.addEventListener('input', update);
+		update();
+	})();
+</script>

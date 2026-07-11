@@ -1,0 +1,32 @@
+---
+/**
+ * Announcement.astro — 公告卡片
+ * 数据源: config/announcementConfig.ts
+ */
+import { getAnnouncement } from '../utils/userData';
+
+const announcement = getAnnouncement();
+---
+
+{announcement && (
+	<div class="card">
+		<h3 class="card-title flex items-center gap-1.5" style="font-size: 1rem; color: var(--color-primary);">
+			<svg class="h-4 w-4" style="color: var(--color-primary);" viewBox="0 0 20 20" fill="currentColor">
+				<path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+			</svg>
+			{announcement.title}
+		</h3>
+		<p class="text-sm leading-relaxed" style="color: var(--color-text-secondary);">
+			{announcement.content}
+		</p>
+		{announcement.learnMore.enabled && (
+			<a
+				href={announcement.learnMore.href}
+				class="mt-3 inline-block rounded-lg px-3 py-1.5 text-xs font-medium no-underline transition-colors"
+				style="background-color: var(--color-primary-light); color: var(--color-primary);"
+			>
+				{announcement.learnMore.label} →
+			</a>
+		)}
+	</div>
+)}

@@ -1,0 +1,96 @@
+---
+/**
+ * archive.astro — 归档页 / 筛选中枢
+ * 支持 ?category=xxx、?tag=xxx、?date=xxx URL 参数
+ * 按年份分组的时间线视图 + 分类胶囊导航 + 悬停上浮效果
+ * 
+ * 过滤逻辑由 BaseLayout.astro 的 swup contentReplaced 事件驱动
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteStats from '../components/SiteStats.astro';
+import Calendar from '../components/Calendar.astro';
+import { getPosts } from '../utils/userData';
+import { site } from '../../config';
+
+const posts = getPosts();
+
+// 按年份分组
+const grouped = new Map<number, typeof posts>();
+for (const post of posts) {
+	const year = post.pubDate.getFullYear();
+	if (!grouped.has(year)) grouped.set(year, []);
+	grouped.get(year)!.push(post);
+}
+
+const years = Array.from(grouped.keys()).sort((a, b) => b - a);
+---
+
+<BaseLayout title={`归档 | ${site.SITE_TITLE}`} description="按年份浏览所有文章">
+	<Fragment slot="main">
+		<div id="archive-filter-status" class="mb-4 hidden items-center justify-between text-sm" style="color: var(--color-text-secondary);">
+			<span>归档 · <span id="archive-filter-count"></span></span>
+			<a href="/archive" class="no-underline hover:underline" style="color: var(--color-primary);" id="archive-filter-clear">清除筛选</a>
+		</div>
+
+		<p id="archive-empty" class="hidden" style="color: var(--color-text-secondary);">暂无匹配的文章。</p>
+
+		<div class="card" id="archive-container" style="padding: 0; overflow: hidden;">
+			{years.map((year, yi) => (
+				<section class="archive-year" data-year={String(year)}>
+					<div class="px-5 pt-4 pb-2" style={yi > 0 ? 'border-top: 1px solid var(--color-border);' : ''}>
+						<h2 class="text-base font-bold" style="color: var(--color-text);">
+							{year}
+							<span class="ml-2 text-sm font-normal year-count" style="color: var(--color-text-secondary);">{grouped.get(year)!.length} 篇</span>
+						</h2>
+					</div>
+
+					<div>
+						{grouped.get(year)!.map((post) => (
+							<a
+								href={`/blog/${post.slug}/`}
+								class="archive-row flex items-center gap-3 px-5 py-2.5 no-underline transition-colors"
+								style="color: var(--color-text); border-bottom: 1px solid var(--color-border);"
+								data-category={post.category || ''}
+								data-tags={(post.tags || []).join(',')}
+								data-date={post.pubDate.toISOString().split('T')[0]}
+							>
+								<time class="shrink-0 text-sm tabular-nums" style="color: var(--color-text-secondary); min-width: 3rem;">
+									{String(post.pubDate.getMonth() + 1).padStart(2, '0')}-{String(post.pubDate.getDate()).padStart(2, '0')}
+								</time>
+								<span class="text-sm font-medium flex-1 min-w-0 truncate" style="color: var(--color-text);">
+									{post.title}
+								</span>
+								{post.tags && post.tags.length > 0 && (
+									<span class="shrink-0 hidden sm:flex gap-1">
+										{post.tags.slice(0, 2).map((t) => (
+											<span class="rounded px-1.5 py-0.5 text-xs" style="color: var(--color-text-secondary);">#{t}</span>
+										))}
+									</span>
+								)}
+								{post.category && (
+									<span class="shrink-0 rounded px-1.5 py-0.5 text-xs" style="background-color: var(--color-primary-light); color: var(--color-primary);">
+										{post.category}
+									</span>
+								)}
+							</a>
+						))}
+					</div>
+				</section>
+			))}
+		</div>
+	</Fragment>
+
+	<Fragment slot="right-sidebar">
+		<SiteStats />
+		<Calendar />
+	</Fragment>
+</BaseLayout>
+
+<style>
+  .archive-row:hover {
+    background-color: var(--color-primary-light);
+  }
+  .archive-row:last-child {
+    border-bottom: none !important;
+  }
+</style>

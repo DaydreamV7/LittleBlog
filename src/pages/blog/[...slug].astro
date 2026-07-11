@@ -1,20 +1,19 @@
 ---
-import { type CollectionEntry, getCollection, render } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
+import BlogPostLayout from '../../layouts/BlogPostLayout.astro';
+import TableOfContents from '../../components/TableOfContents.astro';
+import { getPostStaticPaths } from '../../utils/userData';
 
-export async function getStaticPaths() {
-	const posts = await getCollection('blog');
-	return posts.map((post) => ({
-		params: { slug: post.id },
-		props: post,
-	}));
+export function getStaticPaths() {
+	return getPostStaticPaths();
 }
-type Props = CollectionEntry<'blog'>;
 
-const post = Astro.props;
-const { Content } = await render(post);
+const { post } = Astro.props;
+const Content = post.mod.default;
 ---
 
-<BlogPost {...post.data}>
+<BlogPostLayout post={post}>
+	<Fragment slot="toc">
+		<TableOfContents />
+	</Fragment>
 	<Content />
-</BlogPost>
+</BlogPostLayout>

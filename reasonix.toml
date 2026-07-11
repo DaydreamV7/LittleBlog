@@ -1,0 +1,2 @@
+[permissions]
+allow = ["Bash(Get-ChildItem D:\\Project\\Web\\DMBlog\\AGENTS.md, D:\\Project\\Web\\DMBlog\\CLAUDE.md | Select-Object Name, Length, Mode, Target)"]

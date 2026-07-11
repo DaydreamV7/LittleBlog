@@ -1,0 +1,33 @@
+---
+/**
+ * tools/index.astro — 工具列表页
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { site } from '../../../config';
+
+const tools = [
+	{
+		name: 'Markdown 预览器',
+		description: '在浏览器中实时预览 Markdown 文本',
+		href: '/tools/markdown-preview',
+	},
+];
+---
+
+<BaseLayout title={`工具 | ${site.SITE_TITLE}`} description="实用小工具集合">
+	<Fragment slot="main">
+		<h1 class="mb-6 text-2xl font-bold" style="color: var(--color-text);">工具</h1>
+
+		<div class="grid gap-4 sm:grid-cols-2">
+			{tools.map((tool) => (
+				<a
+					href={tool.href}
+					class="card block transition-shadow hover:shadow-md"
+				>
+					<h3 class="text-lg font-bold" style="color: var(--color-text);">{tool.name}</h3>
+					<p class="mt-1 text-sm" style="color: var(--color-text-secondary);">{tool.description}</p>
+				</a>
+			))}
+		</div>
+	</Fragment>
+</BaseLayout>

@@ -1,0 +1,30 @@
+---
+/**
+ * SiteStats.astro — 站点统计卡片
+ * 左侧指标名称，右侧数字，flex justify-between 布局
+ */
+import { getStats } from '../utils/userData';
+
+const stats = getStats();
+
+const items = [
+	{ label: '文章', value: String(stats.totalPosts) },
+	{ label: '分类', value: String(stats.totalCategories) },
+	{ label: '标签', value: String(stats.totalTags) },
+	{ label: '字数', value: stats.totalWords > 1000 ? `${(stats.totalWords / 1000).toFixed(1)}k` : String(stats.totalWords) },
+	{ label: '运行', value: stats.uptime },
+	{ label: '更新', value: stats.lastActivity },
+];
+---
+
+<div class="card">
+	<h3 class="card-title">站点统计</h3>
+	<div class="flex flex-col gap-0">
+		{items.map(({ label, value }) => (
+			<div class="flex items-center justify-between py-2" style="border-bottom: 1px solid var(--color-border);">
+				<span class="text-sm" style="color: var(--color-text-secondary);">{label}</span>
+				<span class="text-sm font-semibold" style="color: var(--color-text);">{value}</span>
+			</div>
+		))}
+	</div>
+</div>

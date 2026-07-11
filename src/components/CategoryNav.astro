@@ -1,0 +1,292 @@
+---
+/**
+ * CategoryNav.astro — 分类导航栏（移植自 Firefly）
+ * 核心逻辑来自 Firefly/src/components/layout/CategoryBar.astro
+ * 修改：数据源 → user/posts，颜色 → CSS 变量
+ *
+ * 功能：首页图标 + 归档(总数) + 分割线 + 可滚动分类胶囊 + 渐变提示
+ */
+import { getCategories, getPosts } from '../utils/userData';
+
+const categories = getCategories();
+const totalPosts = getPosts().length;
+const homeUrl = '/';
+const archiveUrl = '/archive';
+---
+
+<div
+  class="category-nav"
+  id="category-bar"
+  data-home-path={homeUrl}
+  data-archive-path={archiveUrl}
+>
+  <div class="category-bar-inner flex gap-2">
+    <!-- 首页图标 -->
+    <a
+      href={homeUrl}
+      class="category-pill text-sm px-3 py-1.5 rounded-full shrink-0 transition-colors duration-150 ease-out flex items-center justify-center no-underline"
+      data-category-name=""
+      aria-label="首页"
+    >
+      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" style="color: inherit;">
+        <path fill-rule="evenodd" d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" clip-rule="evenodd" />
+      </svg>
+    </a>
+
+    <!-- 归档 -->
+    <a
+      href={archiveUrl}
+      class="category-pill text-sm px-4 py-1.5 rounded-full whitespace-nowrap shrink-0 transition-colors duration-150 ease-out flex items-center justify-center no-underline"
+      data-category-name="__archive__"
+    >
+      归档
+      <span class="pill-count">{totalPosts}</span>
+    </a>
+
+    <!-- 分割线 -->
+    <div class="category-divider shrink-0"></div>
+
+    <!-- 可滚动分类区域 -->
+    <div class="scroll-area relative">
+      <div class="scroll-fade scroll-fade-left" aria-hidden="true"></div>
+      <div class="category-scroll flex gap-2 overflow-x-auto">
+        {categories.map((cat) => (
+          <a
+            href={`/archive?category=${encodeURIComponent(cat.name)}`}
+            class="category-pill text-sm px-4 py-1.5 rounded-full whitespace-nowrap transition-colors duration-150 ease-out flex items-center justify-center no-underline"
+            data-category-name={cat.name}
+          >
+            {cat.name}
+            <span class="pill-count">{cat.count}</span>
+          </a>
+        ))}
+      </div>
+      <div class="scroll-fade scroll-fade-right" aria-hidden="true"></div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .category-nav {
+    margin-bottom: 1rem;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    box-shadow: var(--shadow-card);
+    font-size: 0.8rem;
+  }
+  .category-nav .category-pill {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    background-color: transparent;
+  }
+  .category-nav .category-pill:hover {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  .category-nav .category-pill[data-active] {
+    background-color: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+  .category-nav .category-pill[data-soft-active] {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  .pill-count {
+    margin-left: 0.25rem;
+    opacity: 0.6;
+    font-size: 0.75rem;
+  }
+  .category-divider {
+    width: 1px;
+    align-self: stretch;
+    background: var(--color-border);
+    opacity: 0.5;
+  }
+
+  .scroll-area {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+  }
+  .scroll-fade {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2.5rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 300ms ease-in-out;
+    z-index: 1;
+  }
+  .scroll-fade[data-visible] {
+    opacity: 1;
+  }
+  .scroll-fade-left {
+    left: 0;
+    background: linear-gradient(to left, transparent, var(--color-bg-card));
+  }
+  .scroll-fade-right {
+    right: 0;
+    background: linear-gradient(to right, transparent, var(--color-bg-card));
+  }
+  .category-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+  }
+  .category-scroll::-webkit-scrollbar {
+    display: none;
+  }
+</style>
+
+<script is:inline>
+(function() {
+  var delayedTimer;
+
+  function getCategoryBarState(bar, currentUrl) {
+    var pathname = currentUrl.pathname.replace(/\/$/, '');
+    var homePath = (bar.getAttribute('data-home-path') || '/').replace(/\/$/, '');
+    var archivePath = (bar.getAttribute('data-archive-path') || '/archive').replace(/\/$/, '');
+    var isHome = pathname === homePath || pathname === '' || pathname === '/';
+    var isArchive = pathname === archivePath;
+
+    return {
+      isHome: isHome,
+      isArchive: isArchive,
+      activeCategory: currentUrl.searchParams.get('category') || '',
+      hasTag: currentUrl.searchParams.has('tag'),
+    };
+  }
+
+  function setActiveCategory(bar, currentUrl) {
+    var state = getCategoryBarState(bar, currentUrl);
+    var pills = bar.querySelectorAll('.category-pill');
+
+    pills.forEach(function(pill) {
+      pill.removeAttribute('data-active');
+      pill.removeAttribute('data-soft-active');
+    });
+
+    if (state.isHome && !state.activeCategory && !state.hasTag) {
+      var homePill = bar.querySelector('.category-pill[data-category-name=""]');
+      if (homePill) homePill.setAttribute('data-active', '');
+      return;
+    }
+
+    if (state.activeCategory) {
+      pills.forEach(function(pill) {
+        if (pill.getAttribute('data-category-name') === state.activeCategory) {
+          pill.setAttribute('data-active', '');
+        }
+      });
+      return;
+    }
+
+    if (state.isArchive && !state.hasTag) {
+      var archivePill = bar.querySelector('.category-pill[data-category-name="__archive__"]');
+      if (archivePill) archivePill.setAttribute('data-active', '');
+      return;
+    }
+  }
+
+  function scrollActiveIntoView(bar, behavior) {
+    behavior = behavior || 'smooth';
+    var activePill = bar.querySelector('.category-pill[data-active]') ||
+                    bar.querySelector('.category-pill[data-soft-active]');
+    var scroll = bar.querySelector('.category-scroll');
+    if (!activePill || !scroll) return;
+
+    var scrollLeft = activePill.offsetLeft - scroll.offsetLeft - (scroll.clientWidth - activePill.offsetWidth) / 2;
+    scroll.scrollTo({ left: Math.max(0, scrollLeft), behavior: behavior });
+  }
+
+  function updateCategoryBar(currentUrl) {
+    currentUrl = currentUrl || new URL(window.location.href);
+    var bar = document.getElementById('category-bar');
+    if (!bar) return;
+
+    setActiveCategory(bar, currentUrl);
+    scrollActiveIntoView(bar, 'smooth');
+    updateScrollHint();
+  }
+
+  function updateScrollHint() {
+    var bar = document.getElementById('category-bar');
+    if (!bar) return;
+    var scroll = bar.querySelector('.category-scroll');
+    var fadeLeft = bar.querySelector('.scroll-fade-left');
+    var fadeRight = bar.querySelector('.scroll-fade-right');
+    if (!scroll || !fadeLeft || !fadeRight) return;
+
+    var hasOverflow = scroll.scrollWidth > scroll.clientWidth + 1;
+    var atStart = scroll.scrollLeft <= 1;
+    var atEnd = scroll.scrollLeft + scroll.clientWidth >= scroll.scrollWidth - 1;
+
+    if (hasOverflow && !atStart) fadeLeft.setAttribute('data-visible', '');
+    else fadeLeft.removeAttribute('data-visible');
+
+    if (hasOverflow && !atEnd) fadeRight.setAttribute('data-visible', '');
+    else fadeRight.removeAttribute('data-visible');
+
+
+  }
+
+  function initCategoryBarInteractions() {
+    var bar = document.getElementById('category-bar');
+    if (!bar || bar.dataset.clickBound === 'true') return;
+    bar.dataset.clickBound = 'true';
+
+    bar.addEventListener('click', function(event) {
+      var pill = event.target.closest('.category-pill');
+      if (!pill) return;
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      var targetUrl = new URL(pill.href, window.location.href);
+      if (targetUrl.origin !== window.location.origin) return;
+
+      setActiveCategory(bar, targetUrl);
+      scrollActiveIntoView(bar, 'auto');
+    });
+  }
+
+  function initScrollFeatures() {
+    var bar = document.getElementById('category-bar');
+    if (!bar) return;
+    var scroll = bar.querySelector('.category-scroll');
+    if (!scroll) return;
+    if (scroll.dataset.featuresBound === 'true') {
+      updateScrollHint();
+      return;
+    }
+    scroll.dataset.featuresBound = 'true';
+
+    // Mouse wheel horizontal scrolling
+    scroll.addEventListener('wheel', function(e) {
+      if (scroll.scrollWidth <= scroll.clientWidth) return;
+      e.preventDefault();
+      scroll.scrollLeft += e.deltaY;
+    }, { passive: false });
+
+    scroll.addEventListener('scroll', updateScrollHint);
+    window.addEventListener('resize', updateScrollHint);
+    updateScrollHint();
+  }
+
+  // Init
+  updateCategoryBar();
+  initCategoryBarInteractions();
+  initScrollFeatures();
+
+  // Astro page load
+  document.addEventListener('astro:page-load', function() {
+    updateCategoryBar();
+    initScrollFeatures();
+  });
+})();
+</script>

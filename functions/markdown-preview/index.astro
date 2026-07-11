@@ -1,0 +1,107 @@
+---
+/**
+ * Markdown 预览器 — 工具页面
+ * 路径: /tools/markdown-preview
+ */
+---
+
+<div class="card">
+	<h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-gray-100">Markdown 预览器</h2>
+	<p class="mb-4 text-sm text-gray-500 dark:text-gray-400">在左侧输入 Markdown 文本，右侧实时预览渲染结果。</p>
+
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+		<!-- 输入区域 -->
+		<div>
+			<label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Markdown 输入</label>
+			<textarea
+				id="md-input"
+				class="h-80 w-full rounded-lg border border-gray-200 bg-white p-3 font-mono text-sm text-gray-900 outline-none focus:border-indigo-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				placeholder="在此输入 Markdown..."
+			>
+## 标题示例
+
+这是一段**加粗**文本和*斜体*文本。
+
+### 列表
+
+- 第一项
+- 第二项
+- 第三项
+
+### 代码
+
+```javascript
+console.log("Hello, World!");
+```
+
+### 引用
+
+> 这是一段引用文字。
+
+### 链接
+
+[访问 GitHub](https://github.com)
+</textarea>
+		</div>
+
+		<!-- 预览区域 -->
+		<div>
+			<label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">预览</label>
+			<div
+				id="md-preview"
+				class="prose prose-slate h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white p-3 dark:prose-invert dark:border-gray-600 dark:bg-gray-800"
+			/>
+		</div>
+	</div>
+</div>
+
+<script>
+	(function () {
+		const input = document.getElementById('md-input') as HTMLTextAreaElement;
+		const preview = document.getElementById('md-preview');
+
+		// 简易 Markdown -> HTML 转换 (无需外部依赖)
+		function renderMarkdown(md: string): string {
+			let html = md
+				// 代码块
+				.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+				// 行内代码
+				.replace(/`([^`]+)`/g, '<code>$1</code>')
+				// h1-h6
+				.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>')
+				.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>')
+				.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>')
+				.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
+				.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
+				.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>')
+				// 引用
+				.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>')
+				// 加粗 + 斜体
+				.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+				.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+				.replace(/\*(.+?)\*/g, '<em>$1</em>')
+				// 链接
+				.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+				// 列表
+				.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>')
+				// 段落
+				.replace(/\n\n/g, '</p><p>')
+				// 水平线
+				.replace(/^---$/gm, '<hr/>');
+
+			// 包裹列表项
+			html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+			return '<p>' + html + '</p>';
+		}
+
+		function update() {
+			if (preview && input) {
+				preview.innerHTML = renderMarkdown(input.value);
+			}
+		}
+
+		input?.addEventListener('input', update);
+		update();
+	})();
+</script>

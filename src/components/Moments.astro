@@ -1,0 +1,30 @@
+---
+/**
+ * Moments.astro — 碎碎念卡片（最近 3 条）
+ * 数据源: user/moments.json
+ */
+import { getMoments } from '../utils/userData';
+
+const moments = getMoments().slice(0, 3);
+
+function formatMMDD(dateStr: string): string {
+	const d = new Date(dateStr);
+	const mm = String(d.getMonth() + 1).padStart(2, '0');
+	const dd = String(d.getDate()).padStart(2, '0');
+	return `${mm}-${dd}`;
+}
+---
+
+{moments.length > 0 && (
+	<div class="card">
+		<h3 class="card-title">碎碎念</h3>
+		<div class="space-y-3">
+			{moments.map((moment) => (
+				<div style="border-left: 2px solid var(--color-primary-light); padding-left: 0.75rem;">
+					<p class="text-sm leading-relaxed" style="color: var(--color-text);">{moment.content}</p>
+					<span class="mt-1 block text-xs" style="color: var(--color-text-secondary);">{formatMMDD(moment.date)}</span>
+				</div>
+			))}
+		</div>
+	</div>
+)}

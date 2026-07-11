@@ -1,52 +1,68 @@
 ---
-// Import the global.css file here so that it is included on
-// all pages through the use of the <BaseHead /> component.
+/**
+ * BaseHead.astro — HTML <head> 配置
+ * 从 config/theme.json 读取主题色，注入 CSS 变量
+ * 防闪烁脚本：在 HTML 解析前设置 data-theme
+ */
 import '../styles/global.css';
-import type { ImageMetadata } from 'astro';
-import FallbackImage from '../assets/blog-placeholder-1.jpg';
-import { SITE_TITLE } from '../consts';
-import { Font } from 'astro:assets';
+import { site } from '../../config';
+import themeData from '../../config/theme.json';
 
 interface Props {
 	title: string;
 	description: string;
-	image?: ImageMetadata;
 }
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const { title, description } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || site.SITE_URL);
 
-const { title, description, image = FallbackImage } = Astro.props;
+// 从 theme.json 生成 CSS 变量（构建时注入）
+function generateThemeVars(theme: Record<string, string>): string {
+	return Object.entries(theme)
+		.filter(([key]) => !key.startsWith('_'))
+		.map(([key, value]) => {
+			const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+			return `--color-${cssKey}: ${value};`;
+		})
+		.join(' ');
+}
+
+const lightVars = generateThemeVars(themeData.light as Record<string, string>);
+const darkVars = generateThemeVars(themeData.dark as Record<string, string>);
 ---
 
-<!-- Global Metadata -->
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="icon" href="/favicon.ico" />
 <link rel="sitemap" href="/sitemap-index.xml" />
-<link
-	rel="alternate"
-	type="application/rss+xml"
-	title={SITE_TITLE}
-	href={new URL('rss.xml', Astro.site)}
-/>
+<link rel="alternate" type="application/rss+xml" title={title} href={new URL('rss.xml', Astro.site || site.SITE_URL)} />
 <meta name="generator" content={Astro.generator} />
-
-<Font cssVariable="--font-atkinson" preload />
-
-<!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />
 
-<!-- Primary Meta Tags -->
 <title>{title}</title>
 <meta name="description" content={description} />
 
-<!-- Open Graph / Facebook -->
+<!-- 主题色 CSS 变量（从 config/theme.json 构建时注入） -->
+<style is:global is:inline>
+	:root, [data-theme="light"] { {lightVars} }
+	[data-theme="dark"] { {darkVars} }
+</style>
+
+<!-- 防闪烁脚本：在 HTML 解析前设置 data-theme -->
+<script is:inline>
+	(function() {
+		const stored = localStorage.getItem('theme');
+		let theme = stored;
+		if (!theme) {
+			theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		}
+		document.documentElement.setAttribute('data-theme', theme);
+	})();
+</script>
+
 <meta property="og:type" content="website" />
 <meta property="og:url" content={Astro.url} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:image" content={new URL(image.src, Astro.url)} />
-
-<!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:card" content="summary-large-image" />

@@ -1,0 +1,33 @@
+---
+/**
+ * TagCloud.astro — 标签云卡片
+ * 点击跳转至 /archive?tag=xxx
+ */
+import { getTags } from '../utils/userData';
+
+const tags = getTags();
+const currentTag = Astro.url.searchParams.get('tag') || '';
+---
+
+{tags.length > 0 && (
+	<div class="card">
+		<h3 class="card-title">标签</h3>
+		<div class="flex flex-wrap gap-2">
+			{tags.map((tag) => (
+				<a
+					href={`/archive?tag=${encodeURIComponent(tag.name)}`}
+					class="inline-block rounded-full px-2.5 py-1 text-xs no-underline transition-colors"
+					style={currentTag === tag.name
+						? 'background-color: var(--color-primary-light); color: var(--color-primary); font-weight: 500;'
+						: `background-color: var(--color-border); color: var(--color-text-secondary); opacity: 0.5;`
+					}
+				>
+					{tag.name}
+					{tag.count > 1 && (
+						<span class="ml-0.5" style="color: var(--color-text-secondary); opacity: 0.7;">{tag.count}</span>
+					)}
+				</a>
+			))}
+		</div>
+	</div>
+)}

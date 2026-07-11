@@ -1,0 +1,228 @@
+---
+/**
+ * BaseLayout.astro — 三栏响应式布局
+ * 左栏 230px + 中栏 1fr + 右栏 270px
+ * CategoryNav 在主内容列内部
+ * swup + 持久化 MutationObserver 驱动过滤/计时/字数
+ */
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import SearchOverlay from '../components/SearchOverlay.astro';
+import Profile from '../components/Profile.astro';
+import Announcement from '../components/Announcement.astro';
+import Categories from '../components/Categories.astro';
+import TagCloud from '../components/TagCloud.astro';
+import Moments from '../components/Moments.astro';
+import CategoryNav from '../components/CategoryNav.astro';
+import { site } from '../../config';
+
+interface Props {
+	title: string;
+	description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang={site.SITE_LANG} class="h-full">
+	<head>
+		<BaseHead title={title} description={description} />
+	</head>
+	<body class="min-h-full" style="background-color: var(--color-bg); color: var(--color-text);">
+		<Header />
+		<SearchOverlay />
+
+		<div class="mx-auto max-w-[1600px] px-4 py-6 lg:px-8">
+			<div class="layout-grid">
+				<aside class="sidebar-left">
+					<div class="hidden md:block"><Profile /></div>
+					<div class="block md:hidden"><Profile compact /></div>
+					<div class="desktop-only space-y-4">
+						<Announcement />
+						<Categories />
+						<TagCloud />
+						<Moments />
+					</div>
+				</aside>
+
+				<main class="min-w-0" id="main-content">
+					<div id="category-nav-container"><CategoryNav /></div>
+					<slot name="main" />
+				</main>
+
+				<aside class="sidebar-right">
+					<slot name="right-sidebar" />
+				</aside>
+			</div>
+		</div>
+
+		<Footer />
+	</body>
+</html>
+
+<script>
+import Swup from 'swup';
+import SwupProgressPlugin from '@swup/progress-plugin';
+const swup = new Swup({
+	containers: ['#main-content'],
+	animateHistoryBrowsing: true,
+	plugins: [new SwupProgressPlugin()],
+});
+swup.hooks.on('page:view', function() {
+	document.dispatchEvent(new Event('astro:page-load'));
+});
+</script>
+
+<script is:inline>
+(function() {
+	function runFilter() {
+		var rows = document.querySelectorAll('.archive-row');
+		if (!rows.length) return;
+		var params = new URL(window.location.href).searchParams;
+		var category = params.get('category') || '';
+		var tag = params.get('tag') || '';
+		var date = params.get('date') || '';
+		var isFiltered = !!(category || tag || date);
+		var matchCount = 0;
+
+		rows.forEach(function(row) {
+			var show = true;
+			if (category && row.getAttribute('data-category') !== category) show = false;
+			if (tag) {
+				var rowTags = (row.getAttribute('data-tags') || '').split(',');
+				if (rowTags.indexOf(tag) === -1) show = false;
+			}
+			if (date && row.getAttribute('data-date') !== date) show = false;
+			row.style.display = show ? '' : 'none';
+			if (show) matchCount++;
+		});
+
+		document.querySelectorAll('.archive-year').forEach(function(section) {
+			var v = 0;
+			section.querySelectorAll('.archive-row').forEach(function(r) { if (r.style.display !== 'none') v++; });
+			section.style.display = v === 0 ? 'none' : '';
+			var ce = section.querySelector('.year-count');
+			if (ce) ce.textContent = v + ' 篇';
+		});
+
+		var fs = document.getElementById('archive-filter-status');
+		var fc = document.getElementById('archive-filter-count');
+		var em = document.getElementById('archive-empty');
+		var co = document.getElementById('archive-container');
+		if (fs) {
+			if (isFiltered) {
+				fs.classList.remove('hidden');
+				fs.classList.add('flex');
+				if (em) em.classList.add('hidden');
+				if (co) co.style.display = matchCount > 0 ? '' : 'none';
+				if (matchCount === 0 && em) em.classList.remove('hidden');
+				if (fc) fc.textContent = '共 ' + matchCount + ' 篇';
+			} else {
+				fs.classList.add('hidden');
+				fs.classList.remove('flex');
+				if (em) em.classList.add('hidden');
+				if (co) co.style.display = '';
+			}
+		}
+	}
+
+	function startTimerAndCount() {
+		var timer = document.getElementById('reading-timer');
+		var wordEl = document.getElementById('word-count-display');
+		if (!timer && !wordEl) {
+			if (window.__dmblogReadingTimer) {
+				clearInterval(window.__dmblogReadingTimer);
+				window.__dmblogReadingTimer = null;
+			}
+			return;
+		}
+
+		if (window.__dmblogReadingTimer) {
+			clearInterval(window.__dmblogReadingTimer);
+			window.__dmblogReadingTimer = null;
+		}
+		if (timer) {
+			var s = 0;
+			window.__dmblogReadingTimer = setInterval(function() {
+				s++;
+				timer.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+			}, 1000);
+		}
+
+		if (wordEl && !wordEl.dataset.done) {
+			wordEl.dataset.done = '1';
+			var article = document.querySelector('.prose');
+			if (article) {
+				var text = article.textContent || '';
+				var chinese = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+				var english = text.replace(/[\u4e00-\u9fff\s]/g, '').split(/\s+/).filter(Boolean).length;
+				var total = chinese + english;
+				wordEl.textContent = total + ' 字 · ' + Math.max(1, Math.ceil(total / 400)) + ' 分钟阅读';
+			}
+		}
+	}
+
+	var target = document.getElementById('main-content');
+	if (target) {
+		var obs = new MutationObserver(function() {
+			runFilter();
+			startTimerAndCount();
+		});
+		obs.observe(target, { childList: true, subtree: true });
+	}
+
+	runFilter();
+	startTimerAndCount();
+
+	document.addEventListener('astro:page-load', function() {
+		runFilter();
+		startTimerAndCount();
+	});
+})();
+</script>
+
+<style>
+	.layout-grid { display: block; }
+
+	@media (min-width: 768px) {
+		.layout-grid {
+			display: grid;
+			grid-template-columns: 230px minmax(0, 1fr);
+			gap: 3rem;
+		}
+		.sidebar-right { display: none; }
+	}
+
+	@media (min-width: 1280px) {
+		.layout-grid {
+			grid-template-columns: 230px minmax(0, 1fr) 270px;
+			gap: 3rem;
+		}
+		.sidebar-right { display: block; }
+	}
+
+	#category-nav-container { margin-bottom: 0.75rem; }
+
+	.sidebar-left,
+	.sidebar-right {
+		position: sticky;
+		top: 4.5rem;
+		align-self: start;
+	}
+
+	.desktop-only { display: none; }
+	@media (min-width: 768px) { .desktop-only { display: block; } }
+
+	article.detail-card {
+		max-width: 1080px;
+		margin: 0 auto;
+		box-shadow: var(--shadow-md);
+		padding: clamp(1.5rem, 2vw, 2.25rem);
+	}
+
+	html.is-changing #main-content { transition: opacity 0.25s ease; }
+	html.is-animating #main-content { opacity: 0; }
+	.swup-progress-bar { background: var(--color-primary) !important; }
+</style>

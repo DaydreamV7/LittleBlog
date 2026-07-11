@@ -1,0 +1,42 @@
+---
+/**
+ * Categories.astro — 分类卡片
+ * 点击跳转至 /archive?category=xxx
+ */
+import { getCategories } from '../utils/userData';
+
+const categories = getCategories();
+const currentCategory = Astro.url.searchParams.get('category') || '';
+---
+
+{categories.length > 0 && (
+	<div class="card">
+		<h3 class="card-title">分类</h3>
+		<div class="space-y-1">
+			<a
+				href="/archive"
+				class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm no-underline transition-colors"
+				style={!currentCategory
+					? 'background-color: var(--color-primary-light); color: var(--color-primary); font-weight: 500;'
+					: 'color: var(--color-text-secondary);'
+				}
+			>
+				<span>全部</span>
+				<span class="text-xs" style="color: var(--color-text-secondary);">{categories.reduce((sum, c) => sum + c.count, 0)}</span>
+			</a>
+			{categories.map((cat) => (
+				<a
+					href={`/archive?category=${encodeURIComponent(cat.name)}`}
+					class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm no-underline transition-colors"
+					style={currentCategory === cat.name
+						? 'background-color: var(--color-primary-light); color: var(--color-primary); font-weight: 500;'
+						: 'color: var(--color-text-secondary);'
+					}
+				>
+					<span>{cat.name}</span>
+					<span class="text-xs" style="color: var(--color-text-secondary);">{cat.count}</span>
+				</a>
+			))}
+		</div>
+	</div>
+)}
