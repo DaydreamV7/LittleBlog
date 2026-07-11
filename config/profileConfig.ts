@@ -5,7 +5,7 @@
  */
 
 /** 博主显示名称 */
-export const name = 'DM';
+export const name = 'LittleBlog';
 
 /** 一句话简介 */
 export const bio = '写代码、打游戏、记录生活。';

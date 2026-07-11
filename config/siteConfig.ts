@@ -4,7 +4,7 @@
  */
 
 /** 站点标题，显示在浏览器标签页和导航栏 */
-export const SITE_TITLE = 'DM 的博客';
+export const SITE_TITLE = 'LittleBlog';
 
 /** 站点描述，用于 SEO 和 RSS */
 export const SITE_DESCRIPTION = '写代码、打游戏、记录生活。';

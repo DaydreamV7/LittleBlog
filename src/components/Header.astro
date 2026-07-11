@@ -21,10 +21,10 @@ const searchData = getPosts().map(p => ({
 }));
 ---
 
-<header style="position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--color-border); background-color: var(--color-bg-nav); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
-	<nav class="mx-auto flex max-w-[1400px] items-center justify-between gap-2 px-4 py-3 lg:px-6">
+<header style="position: sticky; top: 0; z-index: 50; padding: 0.5rem 0;">
+	<nav class="mx-auto flex max-w-[1500px] items-center justify-between gap-2 px-4 lg:px-6 py-3 rounded-2xl" style="background-color: var(--color-bg-nav); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--color-border);">
 		<!-- Logo + 站名（整个区域可点击跳转首页） -->
-		<a href="/" class="flex items-center gap-2.5 text-lg font-bold no-underline shrink-0" style="color: var(--color-text);">
+		<a href="/" class="flex items-center gap-2.5 text-lg font-bold no-underline shrink-0 transition-opacity hover:opacity-80" style="color: var(--color-text);">
 			{logoPath && (
 				<img src={logoPath} alt="Logo" class="h-7 w-7 rounded object-cover" style="box-shadow: 0 0 0 1px var(--color-border);" />
 			)}
@@ -39,8 +39,8 @@ const searchData = getPosts().map(p => ({
 					<a
 						href={href}
 						class:list={[
-							'rounded-lg px-3 py-1.5 text-sm transition-colors no-underline',
-							isActive ? 'font-medium' : '',
+							'nav-link rounded-lg px-3 py-1.5 text-base transition-all no-underline',
+							isActive ? 'font-medium nav-link-active' : '',
 						]}
 						style={isActive
 							? 'background-color: var(--color-primary-light); color: var(--color-primary);'
@@ -120,3 +120,14 @@ const searchData = getPosts().map(p => ({
 	});
 })();
 </script>
+
+<style>
+	.nav-link:hover {
+		background-color: var(--color-primary-light);
+		color: var(--color-primary) !important;
+		transform: translateY(-1px);
+	}
+	.nav-link-active:hover {
+		transform: none;
+	}
+</style>

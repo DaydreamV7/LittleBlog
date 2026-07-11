@@ -108,6 +108,24 @@ const heatmapWeekTemplate = '{month}月第{week}周: {count}篇';
     };
   })();
 
+  // === Expose re-init for swup navigation ===
+  window.__reinitCalendar = function() {
+    if (!document.getElementById('calendar-widget')) return;
+    renderCalendar();
+    var prevBtn = document.getElementById('prev-month-btn');
+    var nextBtn = document.getElementById('next-month-btn');
+    var resetBtn = document.getElementById('reset-month-btn');
+    var navDisplay = document.getElementById('current-month-display');
+    if (prevBtn) prevBtn.onclick = function() { changeMonth(-1); };
+    if (nextBtn) nextBtn.onclick = function() { changeMonth(1); };
+    if (resetBtn) resetBtn.onclick = function() { resetToToday(); };
+    if (navDisplay) navDisplay.onclick = function() {
+      if (currentView === 'day') currentView = 'month';
+      else if (currentView === 'month') currentView = 'year';
+      renderCalendar();
+    };
+  };
+
   // === Render Calendar ===
   function renderCalendar() {
     var container = document.getElementById('calendar-view-container');
